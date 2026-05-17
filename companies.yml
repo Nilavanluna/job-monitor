@@ -1,0 +1,102 @@
+greenhouse:
+  - slug: meta
+    name: Meta
+  - slug: stripe
+    name: Stripe
+  - slug: hubspot
+    name: HubSpot
+  - slug: intercom
+    name: Intercom
+  - slug: zendesk
+    name: Zendesk
+  - slug: twilio
+    name: Twilio
+  - slug: cloudflare
+    name: Cloudflare
+  - slug: mongodb
+    name: MongoDB
+  - slug: datadoghq
+    name: Datadog
+  - slug: elastic
+    name: Elastic
+  - slug: atlassian
+    name: Atlassian
+  - slug: dropbox
+    name: Dropbox
+  - slug: riot-games
+    name: Riot Games
+  - slug: indeed
+    name: Indeed
+  - slug: workhuman
+    name: Workhuman
+  - slug: snowflake-computing
+    name: Snowflake
+  - slug: figma
+    name: Figma
+  - slug: box
+    name: Box
+  - slug: wayfair
+    name: Wayfair
+
+lever:
+  - slug: notion
+    name: Notion
+
+workday:
+  - name: Microsoft
+    url: https://careers.microsoft.com/v2/global/en/search.html
+    tenant: microsoftcareers
+    api_url: https://gcsservices.careers.microsoft.com/search/api/v1/search?lc=Dublin%2C%20Ireland&exp=Students+and+graduates&pgSz=20&pg=1
+  - name: Workday
+    url: https://workday.wd5.myworkdayjobs.com/Workday
+    api_url: https://workday.wd5.myworkdayjobs.com/wday/cxs/workday/Workday/jobs
+  - name: ServiceNow
+    api_url: https://jobs.servicenow.com/jobs.json
+  - name: Accenture
+    api_url: https://www.accenture.com/api/sitecore/Careers/GetJobsByLocation?location=Dublin
+  - name: Mastercard
+    api_url: https://mastercard.wd1.myworkdayjobs.com/wday/cxs/mastercard/CorporateCareers/jobs
+  - name: Visa
+    api_url: https://visa.wd1.myworkdayjobs.com/wday/cxs/visa/Visa_Careers/jobs
+  - name: PayPal
+    api_url: https://paypal.wd1.myworkdayjobs.com/wday/cxs/paypal/jobs/jobs
+  - name: Cisco
+    api_url: https://jobs.cisco.com/jobs/SearchJobsAJAX?location=Dublin&locationId=300000000277135&locationLevel=city
+  - name: Akamai
+    api_url: https://akamai.wd5.myworkdayjobs.com/wday/cxs/akamai/External/jobs
+  - name: CrowdStrike
+    api_url: https://crowdstrike.wd5.myworkdayjobs.com/wday/cxs/crowdstrike/crowdstrikecareers/jobs
+  - name: Palo Alto Networks
+    api_url: https://jobs.paloaltonetworks.com/api/jobs?location=Dublin
+  - name: Fiserv
+    api_url: https://fiserv.wd5.myworkdayjobs.com/wday/cxs/fiserv/SearchJobs/jobs
+  - name: Shopify
+    api_url: https://www.shopify.com/careers/api/v1/positions?location=dublin
+  - name: Deloitte
+    api_url: https://jobs2.deloitte.com/ie/en/api/jobs?location=Dublin
+
+playwright:
+  - name: Google
+    url: https://careers.google.com/jobs/results/?location=Dublin%2C+Ireland&jex=ENTRY_LEVEL
+  - name: Amazon
+    url: https://www.amazon.jobs/en/search?loc_query=Dublin%2C+Ireland&job_type=Full-Time&category=software-development
+  - name: Apple
+    url: https://jobs.apple.com/en-us/search?location=dublin-DUB&team=engineering-and-technology-STDNT-ENGRD
+  - name: Oracle
+    url: https://careers.oracle.com/jobs/#en/sites/jobsearch/jobs?location=Dublin
+  - name: IBM
+    url: https://careers.ibm.com/jobs?field_keyword_08[]=Software+Engineering&field_keyword_18[]=Ireland
+  - name: SAP
+    url: https://jobs.sap.com/search/?q=&locationsearch=Dublin&job_style=full_time
+  - name: Intel
+    url: https://jobs.intel.com/en/search-jobs?keywords=&location=Dublin&radius=25
+  - name: LinkedIn
+    url: https://careers.linkedin.com/jobs#/jobs?location=Dublin
+  - name: TikTok
+    url: https://careers.tiktok.com/position?location=Ireland
+  - name: JPMorgan
+    url: https://careers.jpmorgan.com/us/en/jobs?search=&location=Dublin
+  - name: Dell
+    url: https://jobs.dell.com/en/search-jobs/Dublin/375/4/2963597/53/-8/50/2
+  - name: Salesforce
+    url: https://salesforce.wd1.myworkdayjobs.com/External_Career_Site?location=Ireland
