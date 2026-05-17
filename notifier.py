@@ -22,10 +22,9 @@ def notify_new_jobs(new_jobs: list[dict]):
     if not new_jobs:
         return
 
-    # Send one message per job (Telegram looks clean this way)
     for job in new_jobs:
         emoji = "☁️" if any(x in job["title"].lower() for x in ["cloud", "devops", "sre", "platform", "infrastructure"]) else "💻"
-       msg = (
+        msg = (
             f"{emoji} <b>New Job Alert!</b>\n\n"
             f"🏢 <b>{job['company']}</b>\n"
             f"💼 {job['title']}\n"
@@ -33,6 +32,18 @@ def notify_new_jobs(new_jobs: list[dict]):
             f"🔗 <a href='{job['url']}'>Apply Here</a>"
         )
         send_message(msg)
+
+    if len(new_jobs) > 3:
+        summary = f"📊 <b>{len(new_jobs)} new jobs found across your watchlist!</b>\n\n"
+        companies = list({j["company"] for j in new_jobs})
+        summary += "Companies: " + ", ".join(companies)
+        send_message(summary)
+
+    if len(new_jobs) > 3:
+        summary = f"📊 <b>{len(new_jobs)} new jobs found across your watchlist!</b>\n\n"
+        companies = list({j["company"] for j in new_jobs})
+        summary += "Companies: " + ", ".join(companies)
+        send_message(summary)
 
     # Also send a summary if more than 3 new jobs
     if len(new_jobs) > 3:
