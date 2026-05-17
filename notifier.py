@@ -9,7 +9,7 @@ def send_message(text: str):
     payload = {
         "chat_id":    TELEGRAM_CHAT_ID,
         "text":       text,
-        "parse_mode": "Markdown",
+        "parse_mode": "HTML",
         "disable_web_page_preview": False,
     }
     try:
@@ -25,12 +25,12 @@ def notify_new_jobs(new_jobs: list[dict]):
     # Send one message per job (Telegram looks clean this way)
     for job in new_jobs:
         emoji = "☁️" if any(x in job["title"].lower() for x in ["cloud", "devops", "sre", "platform", "infrastructure"]) else "💻"
-        msg = (
-            f"{emoji} *New Job Alert!*\n\n"
-            f"🏢 *{job['company']}*\n"
+       msg = (
+            f"{emoji} <b>New Job Alert!</b>\n\n"
+            f"🏢 <b>{job['company']}</b>\n"
             f"💼 {job['title']}\n"
             f"📍 {job['location']}\n"
-            f"🔗 [Apply Here]({job['url']})"
+            f"🔗 <a href='{job['url']}'>Apply Here</a>"
         )
         send_message(msg)
 

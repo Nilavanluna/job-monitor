@@ -45,11 +45,12 @@ jobs:
         run: |
           python main.py
 
-      - name: Commit updated state.json
+    - name: Commit updated state.json
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git pull --rebase origin main
           git add state.json
           git diff --staged --quiet || git commit -m "chore: update job state [skip ci]"
+          git fetch origin main
+          git rebase origin/main
           git push
