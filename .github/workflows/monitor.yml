@@ -1,55 +1,36 @@
-name: Job Monitor
+import os
+import requests
 
-on:
-  schedule:
-    # Runs every 15 minutes (GitHub Actions minimum is 5 min but 15 is kinder on limits)
-    - cron: "*/5 * * * *"
-  workflow_dispatch:  # allows manual trigger from GitHub UI
+TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
+TELEGRAM_CHAT_ID   = os.environ["TELEGRAM_CHAT_ID"]
 
-permissions:
-  contents: write  # needed to commit state.json back to repo
+def send_message(text: str):
+    url     = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text":    text,
+    }
+    try:
+        resp = requests.post(url, json=payload, timeout=10)
+        resp.raise_for_status()
+    except Exception as e:
+        print(f"[Telegram] Failed to send message: {e}")
+        print(f"[Telegram] Response: {resp.text if 'resp' in dir() else 'no response'}")
 
-jobs:
-  monitor:
-    runs-on: ubuntu-latest
+def notify_new_jobs(new_jobs: list[dict]):
+    if not new_jobs:
+        return
 
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
+    for job in new_jobs:
+        msg = "\n".join([
+            "New Job Alert!",
+            f"Company: {job['company']}",
+            f"Role: {job['title']}",
+            f"Location: {job['location']}",
+            f"Link: {job['url']}",
+        ])
+        send_message(msg)
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-
-      - name: Install Playwright browsers
-        run: |
-          playwright install chromium --with-deps
-
-      - name: Run job monitor
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: |
-          python main.py
-      - name: Commit updated state.json
-        run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add state.json
-          git diff --staged --quiet || git commit -m "chore: update job state [skip ci]"
-          git fetch origin main
-          git rebase origin/main
-          git push
+    if len(new_jobs) > 3:
+        companies = list({j["company"] for j in new_jobs})
+        send_message(f"{len(new_jobs)} new jobs found! Companies: {', '.join(companies)}")
