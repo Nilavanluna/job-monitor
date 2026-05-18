@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """
 Job Monitor — Main Entry Point
-Runs all scrapers, diffs against state, sends Telegram alerts for new jobs.
+Runs all scrapers, diffs against state, sends Gmail alerts for new jobs.
 """
 import yaml
 from scrapers.greenhouse import scrape as scrape_greenhouse
 from scrapers.lever import scrape as scrape_lever
 from scrapers.workday import scrape_microsoft, scrape_workday_generic
 from scrapers.playwright_scraper import scrape_all as scrape_playwright
+from scrapers.linkedin_indeed import scrape_all as scrape_linkedin_indeed
 from diff_engine import load_state, save_state, find_new_jobs, update_state
 from notifier import notify_new_jobs
 
@@ -17,65 +18,68 @@ def load_companies(path="companies.yml") -> dict:
 
 def main():
     print("=" * 50)
-    print("🔍 Job Monitor starting...")
+    print("Job Monitor starting...")
     print("=" * 50)
 
     companies = load_companies()
     all_jobs  = []
 
-    # ── Greenhouse ──────────────────────────────────────
-    print("\n[1/4] Scraping Greenhouse companies...")
+    # 1. Greenhouse
+    print("\n[1/5] Scraping Greenhouse companies...")
     for company in companies.get("greenhouse", []):
         jobs = scrape_greenhouse(company)
-        print(f"  {company['name']}: {len(jobs)} entry-level jobs in Dublin")
+        print(f"  {company['name']}: {len(jobs)} jobs")
         all_jobs.extend(jobs)
 
-    # ── Lever ───────────────────────────────────────────
-    print("\n[2/4] Scraping Lever companies...")
+    # 2. Lever
+    print("\n[2/5] Scraping Lever companies...")
     for company in companies.get("lever", []):
         jobs = scrape_lever(company)
-        print(f"  {company['name']}: {len(jobs)} entry-level jobs in Dublin")
+        print(f"  {company['name']}: {len(jobs)} jobs")
         all_jobs.extend(jobs)
 
-    # ── Workday / Microsoft ─────────────────────────────
-    print("\n[3/4] Scraping Workday companies...")
+    # 3. Workday / Microsoft
+    print("\n[3/5] Scraping Workday companies...")
     ms_jobs = scrape_microsoft()
-    print(f"  Microsoft: {len(ms_jobs)} entry-level jobs in Dublin")
+    print(f"  Microsoft: {len(ms_jobs)} jobs")
     all_jobs.extend(ms_jobs)
-
     for company in companies.get("workday", []):
         if company["name"] == "Microsoft":
-            continue  # already handled above
+            continue
         jobs = scrape_workday_generic(company)
-        print(f"  {company['name']}: {len(jobs)} entry-level jobs")
+        print(f"  {company['name']}: {len(jobs)} jobs")
         all_jobs.extend(jobs)
 
-    # ── Playwright ──────────────────────────────────────
-    print("\n[4/4] Scraping custom career pages with Playwright...")
-    playwright_companies = companies.get("playwright", [])
-    playwright_jobs = scrape_playwright(playwright_companies)
-    print(f"  Playwright total: {len(playwright_jobs)} entry-level jobs found")
+    # 4. Playwright (custom career pages)
+    print("\n[4/5] Scraping custom career pages...")
+    playwright_jobs = scrape_playwright(companies.get("playwright", []))
+    print(f"  Playwright total: {len(playwright_jobs)} jobs")
     all_jobs.extend(playwright_jobs)
 
-    # ── Diff & Notify ────────────────────────────────────
-    print(f"\n📋 Total jobs found this run: {len(all_jobs)}")
+    # 5. LinkedIn + Indeed
+    print("\n[5/5] Scraping LinkedIn and Indeed...")
+    li_jobs = scrape_linkedin_indeed()
+    print(f"  LinkedIn + Indeed total: {len(li_jobs)} jobs")
+    all_jobs.extend(li_jobs)
 
+    # Diff & Notify
+    print(f"\nTotal jobs found this run: {len(all_jobs)}")
     state    = load_state()
     new_jobs = find_new_jobs(all_jobs, state)
-
-    print(f"🆕 New jobs since last run: {len(new_jobs)}")
+    print(f"New jobs since last run: {len(new_jobs)}")
 
     if new_jobs:
         for job in new_jobs:
-            print(f"  ✅ {job['company']} — {job['title']} ({job['location']})")
+            src = job.get('source','').upper()
+            print(f"  [{src}] {job['company']} - {job['title']} ({job['location']})")
         notify_new_jobs(new_jobs)
         state = update_state(state, new_jobs)
         save_state(state)
-        print("💾 State updated.")
+        print("State updated.")
     else:
-        print("😴 No new jobs. Nothing to notify.")
+        print("No new jobs. Nothing to notify.")
 
-    print("\n✅ Done.")
+    print("\nDone.")
 
 if __name__ == "__main__":
     main()
