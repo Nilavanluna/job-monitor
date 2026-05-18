@@ -1,37 +1,53 @@
 import os
-import requests
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
-TELEGRAM_BOT_TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
-TELEGRAM_CHAT_ID   = os.environ["TELEGRAM_CHAT_ID"]
+GMAIL_USER         = os.environ["GMAIL_USER"]
+GMAIL_APP_PASSWORD = os.environ["GMAIL_APP_PASSWORD"]
 
-def send_message(text: str):
-    url     = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    payload = {
-        "chat_id":    TELEGRAM_CHAT_ID,
-        "text":       text,
-        "disable_web_page_preview": False,
-    }
+def send_email(subject: str, body: str):
+    msg = MIMEMultipart("alternative")
+    msg["Subject"] = subject
+    msg["From"]    = GMAIL_USER
+    msg["To"]      = GMAIL_USER
+
+    text_part = MIMEText(body, "plain")
+    html_body = body.replace("\n", "<br>")
+    html_part = MIMEText(f"<pre style='font-family:sans-serif'>{html_body}</pre>", "html")
+
+    msg.attach(text_part)
+    msg.attach(html_part)
+
     try:
-        resp = requests.post(url, json=payload, timeout=10)
-        resp.raise_for_status()
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+            server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
+            server.sendmail(GMAIL_USER, GMAIL_USER, msg.as_string())
+        print(f"[Gmail] Email sent: {subject}")
     except Exception as e:
-        print(f"[Telegram] Failed to send message: {e}")
+        print(f"[Gmail] Failed to send email: {e}")
+
 
 def notify_new_jobs(new_jobs: list[dict]):
     if not new_jobs:
         return
 
+    by_company: dict[str, list] = {}
     for job in new_jobs:
-        msg = (
-            f"New Job Alert!\n\n"
-            f"Company: {job['company']}\n"
-            f"Role: {job['title']}\n"
-            f"Location: {job['location']}\n"
-            f"Link: {job['url']}"
-        )
-        send_message(msg)
+        by_company.setdefault(job["company"], []).append(job)
 
-    if len(new_jobs) > 3:
-        companies = list({j["company"] for j in new_jobs})
-        summary = f"{len(new_jobs)} new jobs found!\nCompanies: {', '.join(companies)}"
-        send_message(summary)
+    subject = f"[Job Monitor] {len(new_jobs)} new job(s) in Dublin - {', '.join(by_company.keys())}"
+
+    lines = ["New Dublin Jobs Found!", "=" * 50, ""]
+    for company, jobs in by_company.items():
+        lines.append(f"--- {company} ({len(jobs)} role(s)) ---")
+        for job in jobs:
+            lines.append(f"  Role:     {job['title']}")
+            lines.append(f"  Location: {job['location']}")
+            lines.append(f"  Source:   {job.get('source','').upper()}")
+            lines.append(f"  Link:     {job['url']}")
+            lines.append("")
+        lines.append("")
+
+    body = "\n".join(lines)
+    send_email(subject, body)
