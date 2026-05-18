@@ -1,15 +1,11 @@
-"""
-Playwright-based scraper for companies with custom career pages.
-Runs headless Chromium. Each company has a custom parse function
-because every career page is different.
-"""
 import re
 from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
+from datetime import datetime, timezone
 
 KEYWORDS = ["engineer", "cloud", "devops", "software", "developer", "sre", "platform",
             "backend", "fullstack", "full-stack", "graduate", "intern"]
-EXCLUDE  = ["senior", "staff", "principal", "director", "manager", "lead", "vp ",
-            "head of", "sr."]
+EXCLUDE  = ["senior", "staff", "principal", "director", "manager", "lead",
+            "vp ", "head of", "sr."]
 
 def is_entry_level(title: str) -> bool:
     t = title.lower()
@@ -17,27 +13,21 @@ def is_entry_level(title: str) -> bool:
         return False
     return any(x in t for x in KEYWORDS)
 
-# ── helpers ────────────────────────────────────────────────────────────────
-
-def _get_text_links(page, selector_title, selector_link=None):
-    """Generic: grab all matching title elements + their href."""
-    items = []
+def is_recent(date_el, hours=2) -> bool:
+    if not date_el:
+        return True  # no date = don't filter out
+    datetime_attr = date_el.get_attribute("datetime") or ""
+    if not datetime_attr:
+        return True
     try:
-        els = page.query_selector_all(selector_title)
-        for el in els:
-            title = el.inner_text().strip()
-            href  = ""
-            if selector_link:
-                link_el = el.query_selector(selector_link)
-                href = link_el.get_attribute("href") if link_el else ""
-            else:
-                href = el.get_attribute("href") or ""
-            items.append((title, href))
+        posted = datetime.fromisoformat(datetime_attr.replace("Z", "+00:00"))
+        age_hours = (datetime.now(timezone.utc) - posted).total_seconds() / 3600
+        return age_hours <= hours
     except Exception:
-        pass
-    return items
+        return True
 
-# ── per-company parsers ─────────────────────────────────────────────────────
+def is_dublin(location: str) -> bool:
+    return any(x in location.lower() for x in ["dublin", "ireland"])
 
 def parse_google(page) -> list[dict]:
     results = []
@@ -58,26 +48,31 @@ def parse_google(page) -> list[dict]:
         print("[Playwright] Google timed out")
     return results
 
-
 def parse_amazon(page) -> list[dict]:
     results = []
     try:
         page.wait_for_selector("div.job-tile", timeout=15000)
         cards = page.query_selector_all("div.job-tile")
         for card in cards:
-            title_el = card.query_selector("h3.job-title")
-            link_el  = card.query_selector("a.job-link")
+            title_el    = card.query_selector("h3.job-title")
+            link_el     = card.query_selector("a.job-link")
+            location_el = card.query_selector("div.location-and-id")
+            date_el     = card.query_selector("time")
             if not title_el:
                 continue
-            title = title_el.inner_text().strip()
-            url   = "https://www.amazon.jobs" + (link_el.get_attribute("href") or "") if link_el else ""
+            title    = title_el.inner_text().strip()
+            location = location_el.inner_text().strip() if location_el else ""
+            url      = "https://www.amazon.jobs" + (link_el.get_attribute("href") or "") if link_el else ""
+            if not is_dublin(location):
+                continue
+            if not is_recent(date_el, hours=2):
+                continue
             if is_entry_level(title):
                 results.append({"id": url, "company": "Amazon", "title": title,
-                                 "location": "Dublin, Ireland", "url": url, "source": "playwright"})
+                                 "location": location, "url": url, "source": "playwright"})
     except PWTimeout:
         print("[Playwright] Amazon timed out")
     return results
-
 
 def parse_oracle(page) -> list[dict]:
     results = []
@@ -98,9 +93,7 @@ def parse_oracle(page) -> list[dict]:
         print("[Playwright] Oracle timed out")
     return results
 
-
 def parse_generic(page, company_name: str, url_base: str) -> list[dict]:
-    """Fallback: grab any <a> whose text looks like a job title."""
     results = []
     try:
         page.wait_for_load_state("networkidle", timeout=20000)
@@ -121,14 +114,11 @@ def parse_generic(page, company_name: str, url_base: str) -> list[dict]:
         print(f"[Playwright] {company_name} generic error: {e}")
     return results
 
-
 PARSERS = {
-    "Google":   parse_google,
-    "Amazon":   parse_amazon,
-    "Oracle":   parse_oracle,
+    "Google": parse_google,
+    "Amazon": parse_amazon,
+    "Oracle": parse_oracle,
 }
-
-# ── main entry ─────────────────────────────────────────────────────────────
 
 def scrape_all(companies: list[dict]) -> list[dict]:
     all_jobs = []
