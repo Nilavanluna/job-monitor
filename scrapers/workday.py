@@ -10,19 +10,8 @@ def is_entry_level(title: str) -> bool:
     return any(x in t for x in KEYWORDS)
 
 def scrape_microsoft() -> list[dict]:
-    url = (
-        "https://gcsservices.careers.microsoft.com/search/api/v1/search"
-        "?lc=Dublin%2C%20Ireland&exp=Students%20and%20graduates&pgSz=20&pg=1&en=20"
-    )
-    headers = {"User-Agent": "Mozilla/5.0"}
-    try:
-        resp = requests.get(url, headers=headers, timeout=10)
-        resp.raise_for_status()
-        data = resp.json()
-        jobs = data.get("operationResult", {}).get("result", {}).get("jobs", [])
-    except Exception as e:
-        print(f"[Microsoft] error: {e}")
-        return []
+    """Microsoft moved — now scraped via Playwright instead."""
+    return []
 
     results = []
     for job in jobs:
