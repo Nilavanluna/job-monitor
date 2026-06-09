@@ -1,7 +1,9 @@
 import requests
 
-KEYWORDS = ["engineer", "cloud", "devops", "software", "developer", "sre", "platform", "backend", "fullstack", "full-stack", "graduate", "intern"]
-EXCLUDE  = ["senior", "staff", "principal", "director", "manager", "lead", "vp ", "head of", "sr."]
+KEYWORDS = ["engineer", "cloud", "devops", "software", "developer", "sre", "platform",
+            "backend", "fullstack", "full-stack", "graduate", "intern"]
+EXCLUDE  = ["senior", "staff", "principal", "director", "manager", "lead",
+            "vp ", "head of", "sr."]
 
 def is_entry_level(title: str) -> bool:
     t = title.lower()
@@ -25,7 +27,6 @@ def scrape(company: dict) -> list[dict]:
     for job in jobs:
         title    = job.get("title", "")
         location = job.get("location", {}).get("name", "")
-        # filter: Dublin/Ireland location AND entry-level title
         if "dublin" in location.lower() or "ireland" in location.lower():
             if is_entry_level(title):
                 results.append({
