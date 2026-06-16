@@ -1,59 +1,11 @@
 #!/usr/bin/env python3
 """
 LinkedIn scraper — uses LinkedIn's guest jobs API.
-
-Indeed RSS is blocked from GitHub Actions IPs (403). Removed entirely.
-LinkedIn guest API works fine without auth.
+Indeed RSS is blocked from GitHub Actions IPs. Removed entirely.
 """
 import re
 import requests
-
-# Set True to get all Ireland, False for Dublin/remote only
-IRELAND_ONLY = False
-
-LEVEL_KEYWORDS = [
-    "graduate", "junior", "intern", "entry level", "entry-level",
-    "associate", "apprentice", "trainee", "new grad", "early career",
-]
-
-TECH_KEYWORDS = [
-    "cloud", "devops", "sre", "site reliability", "software engineer",
-    "software developer", "backend", "fullstack", "full stack",
-    "full-stack", "platform engineer", "infrastructure engineer",
-    "data engineer", "ml engineer", "machine learning engineer",
-    "ai engineer", "security engineer", "network engineer",
-]
-
-HARD_EXCLUDE = [
-    "senior", "staff", "principal", "director", "manager",
-    "lead ", " lead", "vp ", "head of", "sr.", "sr ",
-    "architect", "consultant", "civil engineer", "structural engineer",
-    "mechanical engineer", "electrical engineer", "chemical engineer",
-    "process engineer", "validation engineer", "construction",
-    "site engineer", "field engineer", "power engineer",
-    "hvac", "bms", "building management", "building services",
-    "graduate power", "graduate electrical", "graduate civil",
-    "graduate structural", "graduate mechanical", "graduate construction",
-    "graduate i &", "graduate i&c", "analog", "layout engineer",
-    "service operations", "power apps",
-]
-
-DUBLIN_TERMS = ["dublin", "remote", "ireland"]
-EXCLUDE_LOCATIONS = ["cork", "galway", "limerick", "waterford", "kilkenny",
-                     "sligo", "drogheda", "kildare", "wexford", "wicklow"]
-
-LINKEDIN_SEARCHES = [
-    ("cloud engineer",             "90009856"),
-    ("devops engineer",            "90009856"),
-    ("software engineer",          "90009856"),
-    ("junior software engineer",   "104738515"),
-    ("graduate software engineer", "104738515"),
-    ("site reliability engineer",  "104738515"),
-    ("backend engineer",           "90009856"),
-    ("data engineer",              "90009856"),
-    ("machine learning engineer",  "90009856"),
-    ("platform engineer",          "90009856"),
-]
+from scrapers._keywords import KEYWORDS, HARD_EXCLUDE, IRELAND_TERMS, EXCLUDE_NON_IRELAND_CITIES
 
 HEADERS = {
     "User-Agent": (
@@ -64,21 +16,42 @@ HEADERS = {
     "Accept-Language": "en-IE,en;q=0.9",
 }
 
+# geoId: 90009856 = Dublin, 104738515 = Ireland
+LINKEDIN_SEARCHES = [
+    ("cloud engineer",              "104738515"),
+    ("devops engineer",             "104738515"),
+    ("software engineer",           "104738515"),
+    ("junior software engineer",    "104738515"),
+    ("graduate software engineer",  "104738515"),
+    ("site reliability engineer",   "104738515"),
+    ("backend engineer",            "104738515"),
+    ("data engineer",               "104738515"),
+    ("machine learning engineer",   "104738515"),
+    ("platform engineer",           "104738515"),
+    ("infrastructure engineer",     "104738515"),
+    ("graduate developer",          "104738515"),
+    ("associate software engineer", "104738515"),
+    ("early careers technology",    "104738515"),
+    ("graduate programme technology","104738515"),
+    ("automation engineer software","104738515"),
+    ("solutions engineer",          "104738515"),
+    ("support engineer",            "104738515"),
+]
+
 
 def is_relevant(title: str) -> bool:
     t = title.lower()
     if any(x in t for x in HARD_EXCLUDE):
         return False
-    return any(x in t for x in TECH_KEYWORDS)
+    return any(x in t for x in KEYWORDS)
 
 
-def is_target_location(location: str) -> bool:
+def is_ireland(location: str) -> bool:
     loc = location.lower()
-    if IRELAND_ONLY:
-        return "ireland" in loc or "ie)" in loc
-    if any(city in loc for city in EXCLUDE_LOCATIONS):
+    # Reject if it's clearly a non-Ireland city
+    if any(city in loc for city in EXCLUDE_NON_IRELAND_CITIES):
         return False
-    return any(term in loc for term in DUBLIN_TERMS)
+    return any(term in loc for term in IRELAND_TERMS)
 
 
 def scrape_linkedin() -> list[dict]:
@@ -88,21 +61,21 @@ def scrape_linkedin() -> list[dict]:
             "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search"
             f"?keywords={requests.utils.quote(keywords)}"
             f"&location=Ireland&geoId={geo_id}"
-            "&f_E=1%2C2"
-            "&f_TPR=r172800"
+            "&f_E=1%2C2"       # entry + associate level
+            "&f_TPR=r172800"   # past 48h
             "&sortBy=DD"
             "&start=0&count=25"
         )
         try:
             resp = requests.get(url, headers=HEADERS, timeout=15)
             resp.raise_for_status()
-            _parse_linkedin_html(resp.text, results)
+            _parse_html(resp.text, results)
         except Exception as e:
             print(f"[LinkedIn] Error for '{keywords}': {e}")
     return results
 
 
-def _parse_linkedin_html(html: str, results: list) -> None:
+def _parse_html(html: str, results: list) -> None:
     titles = re.findall(
         r'class="base-search-card__title"[^>]*>\s*(.*?)\s*</h3>', html
     )
@@ -129,7 +102,7 @@ def _parse_linkedin_html(html: str, results: list) -> None:
 
         if not is_relevant(title):
             continue
-        if not is_target_location(location):
+        if not is_ireland(location):
             continue
 
         results.append({
