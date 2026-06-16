@@ -1,8 +1,7 @@
-# Shared keyword config — imported by all scrapers
-# Keep this as the single source of truth
+# Shared keyword config — single source of truth for all scrapers
 
 KEYWORDS = [
-    # Core engineering roles
+    # Core tech roles
     "software engineer", "software developer", "systems engineer",
     "cloud engineer", "devops engineer", "site reliability engineer",
     "platform engineer", "infrastructure engineer", "network engineer",
@@ -10,17 +9,16 @@ KEYWORDS = [
     "fullstack engineer", "full stack engineer", "full-stack engineer",
     "solutions engineer", "support engineer", "automation engineer",
     "ml engineer", "ai engineer", "machine learning engineer",
-    # Level signals (catches "Graduate Software Engineer", "Junior Cloud Engineer" etc.)
+    "reliability engineer",
+    # Level signals
     "graduate", "junior", "intern", "internship", "entry level",
     "entry-level", "associate engineer", "associate developer",
-    "early careers", "early career", "graduate programme",
-    "new grad", "trainee", "apprentice",
-    # Tech-specific (catches roles with these in the title)
+    "associate software", "early careers", "early career",
+    "graduate programme", "new grad", "trainee", "apprentice",
+    # Tech keywords in titles
     "kubernetes", "terraform", "devsecops", "mlops", "aiops",
-    "observability", "reliability engineer",
-    # Broader tech titles
-    "developer", "sre", "platform", "backend", "fullstack",
-    "infrastructure", "cloud", "devops",
+    "observability", "developer", "sre", "platform", "backend",
+    "fullstack", "infrastructure", "cloud", "devops",
 ]
 
 HARD_EXCLUDE = [
@@ -30,7 +28,7 @@ HARD_EXCLUDE = [
     "director", "manager", "head of", "vp ", "vice president",
     "lead ", " lead", "tech lead", "team lead",
     "architect", "consultant",
-    # Non-tech engineering (civil/mechanical/electrical etc.)
+    # Non-software engineering — physical/civil/mechanical
     "civil engineer", "structural engineer", "mechanical engineer",
     "electrical engineer", "chemical engineer", "process engineer",
     "validation engineer", "construction", "site engineer",
@@ -39,14 +37,15 @@ HARD_EXCLUDE = [
     "graduate power", "graduate electrical", "graduate civil",
     "graduate structural", "graduate mechanical",
     "graduate construction", "graduate i &", "graduate i&c",
-    # Hardware/chip
+    "graduate csa", "graduate csa engineer",
+    # Hardware
     "analog", "layout engineer", "asic", "fpga", "pcb",
     "hardware engineer",
-    # Other noise
+    # Business/non-tech
     "service operations", "power apps", "sales engineer",
     "pre-sales", "presales", "account executive",
-    "recruiter", "hr ", "finance", "accounting", "tax ",
-    "legal", "marketing", "design", "product manager",
+    "recruiter", "finance", "accounting", "tax ",
+    "legal", "marketing",
 ]
 
 IRELAND_TERMS = [
@@ -56,10 +55,8 @@ IRELAND_TERMS = [
 ]
 
 EXCLUDE_NON_IRELAND_CITIES = [
-    # Catch UK cities that sometimes appear
     "london", "manchester", "edinburgh", "glasgow", "birmingham",
-    # US cities
     "new york", "san francisco", "seattle", "austin", "boston",
-    # Other EU
     "amsterdam", "berlin", "paris", "madrid", "stockholm",
+    "sydney", "singapore", "warsaw", "prague", "brno",
 ]
