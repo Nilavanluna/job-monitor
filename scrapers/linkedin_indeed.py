@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-LinkedIn scraper — uses LinkedIn's guest jobs API.
-Indeed RSS is blocked from GitHub Actions IPs. Removed entirely.
+LinkedIn scraper — guest API with rate limit handling.
 """
 import re
+import time
 import requests
 from scrapers._keywords import KEYWORDS, HARD_EXCLUDE, IRELAND_TERMS, EXCLUDE_NON_IRELAND_CITIES
 
@@ -16,7 +16,7 @@ HEADERS = {
     "Accept-Language": "en-IE,en;q=0.9",
 }
 
-# geoId: 90009856 = Dublin, 104738515 = Ireland
+# geoId 104738515 = Ireland
 LINKEDIN_SEARCHES = [
     ("cloud engineer",              "104738515"),
     ("devops engineer",             "104738515"),
@@ -29,14 +29,14 @@ LINKEDIN_SEARCHES = [
     ("machine learning engineer",   "104738515"),
     ("platform engineer",           "104738515"),
     ("infrastructure engineer",     "104738515"),
-    ("graduate developer",          "104738515"),
     ("associate software engineer", "104738515"),
+    ("graduate developer",          "104738515"),
     ("early careers technology",    "104738515"),
-    ("graduate programme technology","104738515"),
-    ("automation engineer software","104738515"),
     ("solutions engineer",          "104738515"),
     ("support engineer",            "104738515"),
 ]
+
+DELAY_BETWEEN_REQUESTS = 3  # seconds — avoids 429
 
 
 def is_relevant(title: str) -> bool:
@@ -48,7 +48,6 @@ def is_relevant(title: str) -> bool:
 
 def is_ireland(location: str) -> bool:
     loc = location.lower()
-    # Reject if it's clearly a non-Ireland city
     if any(city in loc for city in EXCLUDE_NON_IRELAND_CITIES):
         return False
     return any(term in loc for term in IRELAND_TERMS)
@@ -56,18 +55,24 @@ def is_ireland(location: str) -> bool:
 
 def scrape_linkedin() -> list[dict]:
     results = []
-    for keywords, geo_id in LINKEDIN_SEARCHES:
+    for i, (keywords, geo_id) in enumerate(LINKEDIN_SEARCHES):
+        if i > 0:
+            time.sleep(DELAY_BETWEEN_REQUESTS)
         url = (
             "https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search"
             f"?keywords={requests.utils.quote(keywords)}"
             f"&location=Ireland&geoId={geo_id}"
-            "&f_E=1%2C2"       # entry + associate level
-            "&f_TPR=r172800"   # past 48h
+            "&f_E=1%2C2"
+            "&f_TPR=r172800"
             "&sortBy=DD"
             "&start=0&count=25"
         )
         try:
             resp = requests.get(url, headers=HEADERS, timeout=15)
+            if resp.status_code == 429:
+                print(f"[LinkedIn] Rate limited on '{keywords}', waiting 30s...")
+                time.sleep(30)
+                resp = requests.get(url, headers=HEADERS, timeout=15)
             resp.raise_for_status()
             _parse_html(resp.text, results)
         except Exception as e:
