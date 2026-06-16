@@ -1,3 +1,6 @@
+# companies.yml — verified Ireland tech companies
+# Last updated: June 2026
+
 greenhouse:
   - name: Stripe
     slug: stripe
@@ -23,41 +26,47 @@ greenhouse:
     slug: databricks
   - name: Squarespace
     slug: squarespace
-
-lever:
   - name: Cloudflare
     slug: cloudflare
-  - name: Okta
-    slug: okta
-  - name: Rapid7
-    slug: rapid7
   - name: GitLab
     slug: gitlab
+  - name: Rapid7
+    slug: rapid7
+  - name: Okta
+    slug: okta
+  - name: HubSpot
+    slug: hubspot
+  - name: Zendesk
+    slug: zendesk
+  - name: Datadog
+    slug: datadog
+  - name: Snowflake
+    slug: snowflake-computing
+  - name: PagerDuty
+    slug: pagerduty
+  - name: HashiCorp
+    slug: hashicorp
 
-workday:
-  - name: Mastercard
-    api_url: https://mastercard.wd1.myworkdayjobs.com/wday/cxs/mastercard/CorporateCareers/jobs
-  - name: Visa
-    api_url: https://visa.wd1.myworkdayjobs.com/wday/cxs/visa/Visa_Careers/jobs
-  - name: PayPal
-    api_url: https://paypal.wd1.myworkdayjobs.com/wday/cxs/paypal/jobs/jobs
-  - name: Akamai
-    api_url: https://akamai.wd5.myworkdayjobs.com/wday/cxs/akamai/External/jobs
-  - name: Accenture
-    api_url: https://accenture.wd3.myworkdayjobs.com/wday/cxs/accenture/AccentureCareers/jobs
-  - name: CrowdStrike
-    api_url: https://crowdstrike.wd5.myworkdayjobs.com/wday/cxs/crowdstrike/crowdstrikecareers/jobs
+# No Lever companies — all moved to Greenhouse or Workday
 
 playwright:
   - name: Google
-    url: https://careers.google.com/jobs/results/?location=Dublin%2C+Ireland&q=engineer
+    url: https://careers.google.com/jobs/results/?country=IE&q=engineer
   - name: Amazon
-    url: https://www.amazon.jobs/en/search?base_query=software+engineer&loc_query=Dublin%2C+Ireland&country=IRL
+    url: https://www.amazon.jobs/en/search?base_query=software+engineer&loc_query=Ireland&country=IRL
   - name: Microsoft
-    url: https://jobs.careers.microsoft.com/global/en/search?lc=Dublin%2C%20Ireland&l=en_us&pg=1&pgSz=20
+    url: https://jobs.careers.microsoft.com/global/en/search?lc=Ireland&l=en_us&pg=1&pgSz=20
   - name: Meta
     url: https://www.metacareers.com/jobs/?offices[0]=Dublin%2C+Ireland
   - name: Apple
-    url: https://jobs.apple.com/en-ie/search?location=dublin-DUBIR
+    url: https://jobs.apple.com/en-ie/search?location=ireland-IRL
   - name: Intel
-    url: https://jobs.intel.com/en/search-jobs?keywords=engineer&location=Dublin&radius=25
+    url: https://jobs.intel.com/en/search-jobs?keywords=engineer&location=Ireland&radius=50
+  - name: Mastercard
+    url: https://mastercard.wd1.myworkdayjobs.com/CorporateCareers?locationCountry=bc33aa3152ec42d4995f4791a106ed09
+  - name: Visa
+    url: https://visa.wd1.myworkdayjobs.com/Visa_Careers?locationCountry=bc33aa3152ec42d4995f4791a106ed09
+  - name: CrowdStrike
+    url: https://crowdstrike.wd5.myworkdayjobs.com/crowdstrikecareers?locationCountry=bc33aa3152ec42d4995f4791a106ed09
+  - name: Accenture
+    url: https://accenture.wd3.myworkdayjobs.com/AccentureCareers?locationCountry=bc33aa3152ec42d4995f4791a106ed09
