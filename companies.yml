@@ -1,5 +1,4 @@
 # companies.yml — verified Ireland tech companies
-# Last updated: June 2026
 
 greenhouse:
   - name: Stripe
@@ -30,28 +29,20 @@ greenhouse:
     slug: cloudflare
   - name: GitLab
     slug: gitlab
-  - name: Rapid7
-    slug: rapid7
   - name: Okta
     slug: okta
   - name: HubSpot
     slug: hubspot
-  - name: Zendesk
-    slug: zendesk
   - name: Datadog
     slug: datadog
-  - name: Snowflake
-    slug: snowflake-computing
   - name: PagerDuty
     slug: pagerduty
   - name: HashiCorp
     slug: hashicorp
 
-# No Lever companies — all moved to Greenhouse or Workday
-
 playwright:
   - name: Google
-    url: https://careers.google.com/jobs/results/?country=IE&q=engineer
+    url: https://careers.google.com/jobs/results/?location=Ireland&q=engineer&jex=ENTRY_LEVEL
   - name: Amazon
     url: https://www.amazon.jobs/en/search?base_query=software+engineer&loc_query=Ireland&country=IRL
   - name: Microsoft
