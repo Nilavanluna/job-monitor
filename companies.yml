@@ -41,6 +41,10 @@ greenhouse:
     slug: hashicorp
 
 playwright:
+  - name: IrishJobs
+    url: https://www.irishjobs.ie/jobs/software-engineer?location=Ireland&sort=2
+  - name: JobsIE
+    url: https://www.jobs.ie/Search/Results?q=software+engineer&l=Ireland
   - name: Google
     url: https://careers.google.com/jobs/results/?location=Ireland&q=engineer&jex=ENTRY_LEVEL
   - name: Amazon
