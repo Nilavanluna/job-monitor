@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """
-Playwright scraper — Google, Amazon, Microsoft, Meta, Apple, Intel,
-Mastercard, Visa, CrowdStrike, Accenture, IrishJobs.ie, Jobs.ie.
-Location: all of Ireland.
+IrishJobs.ie + Jobs.ie scraper via Playwright.
+
+Both sites lack RSS/API access — scraped via rendered search result pages.
+Selectors use multiple fallback patterns since exact DOM structure can't be
+verified outside a live browser session; the run logs will tell us which
+selector set actually matches and we'll prune the rest.
 """
-from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
+from playwright.sync_api import TimeoutError as PWTimeout
 from scrapers._keywords import KEYWORDS, HARD_EXCLUDE, IRELAND_TERMS, EXCLUDE_NON_IRELAND_CITIES
-from scrapers.irish_boards import parse_irishjobs, parse_jobsie
 
 
 def is_entry_level(title: str) -> bool:
@@ -20,11 +22,13 @@ def is_ireland(location: str) -> bool:
     loc = location.lower()
     if any(city in loc for city in EXCLUDE_NON_IRELAND_CITIES):
         return False
+    if not location:
+        return True
     return any(term in loc for term in IRELAND_TERMS)
 
 
 def _wait_and_select(page, selector: str, timeout: int = 20000) -> list:
-    page.wait_for_timeout(3000)
+    page.wait_for_timeout(2500)
     try:
         page.wait_for_selector(selector, timeout=timeout)
         return page.query_selector_all(selector)
@@ -32,240 +36,100 @@ def _wait_and_select(page, selector: str, timeout: int = 20000) -> list:
         return []
 
 
-# ---------------------------------------------------------------------------
-# Google
-# ---------------------------------------------------------------------------
-def parse_google(page) -> list[dict]:
+def parse_irishjobs(page) -> list[dict]:
     results = []
-    cards = _wait_and_select(page, "li.lLd3Je")
-    for card in cards:
-        title_el = card.query_selector("h3.QJPWVe")
-        loc_el   = card.query_selector("span.r0wTof")
-        link_el  = card.query_selector("a")
-        if not title_el:
-            continue
-        title    = title_el.inner_text().strip()
-        location = loc_el.inner_text().strip() if loc_el else "Ireland"
-        href     = link_el.get_attribute("href") or "" if link_el else ""
-        if href and not href.startswith("/"):
-            href = "/" + href
-        url = "https://careers.google.com" + href if href else ""
-        if not is_ireland(location):
-            continue
-        if is_entry_level(title):
-            results.append({"id": url, "company": "Google", "title": title,
-                             "location": location, "url": url, "source": "playwright"})
-    return results
-
-
-# ---------------------------------------------------------------------------
-# Amazon
-# ---------------------------------------------------------------------------
-def parse_amazon(page) -> list[dict]:
-    results = []
-    cards = _wait_and_select(page, "div.job-tile")
-    for card in cards:
-        title_el    = card.query_selector("h3.job-title")
-        link_el     = card.query_selector("a.job-link")
-        location_el = card.query_selector("div.location-and-id")
-        if not title_el:
-            continue
-        title    = title_el.inner_text().strip()
-        location = location_el.inner_text().strip() if location_el else ""
-        href     = link_el.get_attribute("href") or "" if link_el else ""
-        url      = "https://www.amazon.jobs" + href if href else ""
-        if not is_ireland(location):
-            continue
-        if is_entry_level(title):
-            results.append({"id": url, "company": "Amazon", "title": title,
-                             "location": location, "url": url, "source": "playwright"})
-    return results
-
-
-# ---------------------------------------------------------------------------
-# Microsoft
-# ---------------------------------------------------------------------------
-def parse_microsoft(page) -> list[dict]:
-    results = []
-    cards = _wait_and_select(page, "div[class*='ms-List-cell']", timeout=25000)
-    for card in cards:
-        title_el    = card.query_selector("a[aria-label]")
-        location_el = card.query_selector("span[class*='location']")
-        if not title_el:
-            continue
-        title    = (title_el.get_attribute("aria-label") or title_el.inner_text()).strip()
-        location = location_el.inner_text().strip() if location_el else "Ireland"
-        href     = title_el.get_attribute("href") or ""
-        url      = href if href.startswith("http") else "https://jobs.careers.microsoft.com" + href
-        if not is_ireland(location):
-            continue
-        if is_entry_level(title):
-            results.append({"id": url, "company": "Microsoft", "title": title,
-                             "location": location, "url": url, "source": "playwright"})
-    return results
-
-
-# ---------------------------------------------------------------------------
-# Meta
-# ---------------------------------------------------------------------------
-def parse_meta(page) -> list[dict]:
-    results = []
-    cards = _wait_and_select(page, "div._8muv, [data-testid='job-result']", timeout=25000)
-    for card in cards:
-        title_el    = card.query_selector("span._8n2t, [data-testid='job-title']")
-        location_el = card.query_selector("div._9asx span:first-child, [data-testid='job-location']")
-        link_el     = card.query_selector("a")
-        if not title_el:
-            continue
-        title    = title_el.inner_text().strip()
-        location = location_el.inner_text().strip() if location_el else ""
-        href     = link_el.get_attribute("href") or "" if link_el else ""
-        url      = href if href.startswith("http") else "https://www.metacareers.com" + href
-        if not is_ireland(location):
-            continue
-        if is_entry_level(title):
-            results.append({"id": url, "company": "Meta", "title": title,
-                             "location": location, "url": url, "source": "playwright"})
-    return results
-
-
-# ---------------------------------------------------------------------------
-# Apple
-# ---------------------------------------------------------------------------
-def parse_apple(page) -> list[dict]:
-    results = []
-    rows = _wait_and_select(page, "table#search-results tbody tr, .table-row", timeout=25000)
-    for row in rows:
-        title_el    = row.query_selector("td.table-col-1 a, .title a")
-        location_el = row.query_selector("td.table-col-2, .location")
-        if not title_el:
-            continue
-        title    = title_el.inner_text().strip()
-        location = location_el.inner_text().strip() if location_el else ""
-        href     = title_el.get_attribute("href") or ""
-        url      = href if href.startswith("http") else "https://jobs.apple.com" + href
-        if not is_ireland(location) and location:
-            continue
-        if is_entry_level(title):
-            results.append({"id": url, "company": "Apple", "title": title,
-                             "location": location or "Ireland", "url": url, "source": "playwright"})
-    return results
-
-
-# ---------------------------------------------------------------------------
-# Intel
-# ---------------------------------------------------------------------------
-def parse_intel(page) -> list[dict]:
-    results = []
-    cards = _wait_and_select(page, "li.job-list-item, div.job-card", timeout=25000)
-    for card in cards:
-        title_el    = card.query_selector("a.job-title, h2 a, h3 a")
-        location_el = card.query_selector("span.job-location, .location")
-        if not title_el:
-            continue
-        title    = title_el.inner_text().strip()
-        location = location_el.inner_text().strip() if location_el else "Ireland"
-        href     = title_el.get_attribute("href") or ""
-        url      = href if href.startswith("http") else "https://jobs.intel.com" + href
-        if not is_ireland(location) and location:
-            continue
-        if is_entry_level(title):
-            results.append({"id": url, "company": "Intel", "title": title,
-                             "location": location, "url": url, "source": "playwright"})
-    return results
-
-
-# ---------------------------------------------------------------------------
-# Workday generic (Mastercard, Visa, CrowdStrike, Accenture)
-# ---------------------------------------------------------------------------
-def parse_workday_page(page, company_name: str) -> list[dict]:
-    results = []
-    cards = _wait_and_select(
-        page,
-        "li[class*='css-'], [data-automation-id='jobItem'], ul[role='list'] li",
-        timeout=25000
+    selector = (
+        "article[data-at='job-item'], "
+        "div[data-genesis-element='CARD'], "
+        "li.job-result, "
+        "div.job-card"
     )
+    cards = _wait_and_select(page, selector, timeout=20000)
     for card in cards:
-        title_el    = card.query_selector(
-            "a[data-automation-id='jobTitle'], h3 a, a.css-19uc56f"
+        title_el = card.query_selector(
+            "h2 a, h3 a, a[data-at='job-item-title'], a.job-title"
+        )
+        company_el = card.query_selector(
+            "[data-at='job-item-company-name'], span.company-name, .job-company"
         )
         location_el = card.query_selector(
-            "div[data-automation-id='locations'], dd[data-automation-id='location'], "
-            "div[class*='location'], span[class*='location']"
+            "[data-at='job-item-location'], span.location, .job-location"
         )
         if not title_el:
             continue
         title    = title_el.inner_text().strip()
-        location = location_el.inner_text().strip() if location_el else ""
-        if not title or len(title) < 4:
-            continue
-        if not is_ireland(location) and location:
+        company  = company_el.inner_text().strip() if company_el else "Unknown"
+        location = location_el.inner_text().strip() if location_el else "Ireland"
+        href     = title_el.get_attribute("href") or ""
+        url      = href if href.startswith("http") else "https://www.irishjobs.ie" + href
+
+        if not is_ireland(location):
             continue
         if not is_entry_level(title):
             continue
-        href = title_el.get_attribute("href") or ""
-        base = "https://" + page.url.split("/")[2]
-        url  = href if href.startswith("http") else base + href
-        results.append({"id": url or title, "company": company_name, "title": title,
-                         "location": location or "Ireland", "url": url, "source": "playwright"})
+
+        results.append({
+            "id": url or title, "company": company, "title": title,
+            "location": location, "url": url, "source": "irishjobs",
+        })
     return results
 
 
-def parse_mastercard(page)  -> list[dict]: return parse_workday_page(page, "Mastercard")
-def parse_visa(page)        -> list[dict]: return parse_workday_page(page, "Visa")
-def parse_crowdstrike(page) -> list[dict]: return parse_workday_page(page, "CrowdStrike")
-def parse_accenture(page)   -> list[dict]: return parse_workday_page(page, "Accenture")
+def parse_jobsie(page) -> list[dict]:
+    results = []
+    selector = (
+        "div.job-listing, li.job-listing, "
+        "div.search-result, article.job"
+    )
+    cards = _wait_and_select(page, selector, timeout=20000)
+    for card in cards:
+        title_el = card.query_selector("h2 a, h3 a, a.job-title, .title a")
+        company_el = card.query_selector(".company, .employer, span.company-name")
+        location_el = card.query_selector(".location, span.job-location")
+        if not title_el:
+            continue
+        title    = title_el.inner_text().strip()
+        company  = company_el.inner_text().strip() if company_el else "Unknown"
+        location = location_el.inner_text().strip() if location_el else "Ireland"
+        href     = title_el.get_attribute("href") or ""
+        url      = href if href.startswith("http") else "https://www.jobs.ie" + href
+
+        if not is_ireland(location):
+            continue
+        if not is_entry_level(title):
+            continue
+
+        results.append({
+            "id": url or title, "company": company, "title": title,
+            "location": location, "url": url, "source": "jobsie",
+        })
+    return results
 
 
-# ---------------------------------------------------------------------------
-# Router
-# ---------------------------------------------------------------------------
 PARSERS = {
-    "Google":      parse_google,
-    "Amazon":      parse_amazon,
-    "Microsoft":   parse_microsoft,
-    "Meta":        parse_meta,
-    "Apple":       parse_apple,
-    "Intel":       parse_intel,
-    "Mastercard":  parse_mastercard,
-    "Visa":        parse_visa,
-    "CrowdStrike": parse_crowdstrike,
-    "Accenture":   parse_accenture,
-    "IrishJobs":   parse_irishjobs,
-    "JobsIE":      parse_jobsie,
+    "IrishJobs": parse_irishjobs,
+    "JobsIE":    parse_jobsie,
 }
 
 
-def scrape_all(companies: list[dict]) -> list[dict]:
+def scrape_irish_boards(page_factory, companies: list[dict]) -> list[dict]:
     all_jobs = []
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        context = browser.new_context(
-            user_agent=(
-                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-            ),
-            locale="en-IE",
-        )
-        for company in companies:
-            if company.get("skip"):
-                continue
-            name = company["name"]
-            url  = company["url"]
-            print(f"[Playwright] Scraping {name} ...")
-            try:
-                page = context.new_page()
-                page.goto(url, timeout=45000, wait_until="domcontentloaded")
-                parser = PARSERS.get(name)
-                if parser:
-                    jobs = parser(page)
-                    print(f"  {name}: {len(jobs)} jobs")
-                else:
-                    print(f"  {name}: no parser, skipping")
-                    jobs = []
-                all_jobs.extend(jobs)
-                page.close()
-            except Exception as e:
-                print(f"[Playwright] {name} failed: {e}")
-        browser.close()
+    for entry in companies:
+        name = entry["name"]
+        url  = entry["url"]
+        print(f"[Playwright] Scraping {name} ...")
+        try:
+            page = page_factory()
+            page.goto(url, timeout=45000, wait_until="domcontentloaded")
+            parser = PARSERS.get(name)
+            if parser:
+                jobs = parser(page)
+                print(f"  {name}: {len(jobs)} jobs")
+            else:
+                print(f"  {name}: no parser, skipping")
+                jobs = []
+            all_jobs.extend(jobs)
+            page.close()
+        except Exception as e:
+            print(f"[Playwright] {name} failed: {e}")
     return all_jobs
