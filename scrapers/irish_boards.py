@@ -1,14 +1,28 @@
 #!/usr/bin/env python3
 """
-IrishJobs.ie + Jobs.ie scraper via Playwright.
+IrishJobs.ie scraper via Playwright — multi-keyword search.
 
-Both sites lack RSS/API access — scraped via rendered search result pages.
-Selectors use multiple fallback patterns since exact DOM structure can't be
-verified outside a live browser session; the run logs will tell us which
-selector set actually matches and we'll prune the rest.
+Jobs.ie removed: it now redirects through TotalJobs/StepStone's broken
+search flow that throws JS errors and never renders results client-side.
+Confirmed via console trace showing 'ReferenceError: s is not defined'
+in their search page script — not a selector problem, the search itself
+fails. IrishJobs.ie is a separate, working property and is kept.
 """
 from playwright.sync_api import TimeoutError as PWTimeout
 from scrapers._keywords import KEYWORDS, HARD_EXCLUDE, IRELAND_TERMS, EXCLUDE_NON_IRELAND_CITIES
+
+IRISHJOBS_SEARCHES = [
+    "software-engineer",
+    "cloud-engineer",
+    "devops-engineer",
+    "graduate-software-engineer",
+    "junior-software-engineer",
+    "site-reliability-engineer",
+    "platform-engineer",
+    "data-engineer",
+]
+
+IRISHJOBS_BASE = "https://www.irishjobs.ie/jobs/{slug}?location=Ireland&sort=2"
 
 
 def is_entry_level(title: str) -> bool:
@@ -22,8 +36,6 @@ def is_ireland(location: str) -> bool:
     loc = location.lower()
     if any(city in loc for city in EXCLUDE_NON_IRELAND_CITIES):
         return False
-    # IrishJobs/Jobs.ie results are already Ireland-only by definition,
-    # but verify when location text is present
     if not location:
         return True
     return any(term in loc for term in IRELAND_TERMS)
@@ -38,12 +50,7 @@ def _wait_and_select(page, selector: str, timeout: int = 20000) -> list:
         return []
 
 
-# ---------------------------------------------------------------------------
-# IrishJobs.ie — StepStone-platform listing page
-# Common selector patterns for StepStone-family sites (IrishJobs is owned
-# by Saongroup/StepStone). Tries several fallback patterns.
-# ---------------------------------------------------------------------------
-def parse_irishjobs(page) -> list[dict]:
+def _parse_irishjobs_page(page) -> list[dict]:
     results = []
     selector = (
         "article[data-at='job-item'], "
@@ -82,69 +89,29 @@ def parse_irishjobs(page) -> list[dict]:
     return results
 
 
-# ---------------------------------------------------------------------------
-# Jobs.ie — independent Irish job board
-# ---------------------------------------------------------------------------
-def parse_jobsie(page) -> list[dict]:
-    results = []
-    selector = (
-        "div.job-listing, li.job-listing, "
-        "div.search-result, article.job"
-    )
-    cards = _wait_and_select(page, selector, timeout=20000)
-    for card in cards:
-        title_el = card.query_selector("h2 a, h3 a, a.job-title, .title a")
-        company_el = card.query_selector(".company, .employer, span.company-name")
-        location_el = card.query_selector(".location, span.job-location")
-        if not title_el:
-            continue
-        title    = title_el.inner_text().strip()
-        company  = company_el.inner_text().strip() if company_el else "Unknown"
-        location = location_el.inner_text().strip() if location_el else "Ireland"
-        href     = title_el.get_attribute("href") or ""
-        url      = href if href.startswith("http") else "https://www.jobs.ie" + href
-
-        if not is_ireland(location):
-            continue
-        if not is_entry_level(title):
-            continue
-
-        results.append({
-            "id": url or title, "company": company, "title": title,
-            "location": location, "url": url, "source": "jobsie",
-        })
-    return results
-
-
-PARSERS = {
-    "IrishJobs": parse_irishjobs,
-    "JobsIE":    parse_jobsie,
-}
-
-
-def scrape_irish_boards(page_factory, companies: list[dict]) -> list[dict]:
-    """
-    page_factory: a callable that returns a fresh Playwright page from the
-    same browser context used by playwright_scraper.py (passed in to avoid
-    spinning up a second browser instance).
-    """
+def scrape_irishjobs_multi(context) -> list[dict]:
     all_jobs = []
-    for entry in companies:
-        name = entry["name"]
-        url  = entry["url"]
-        print(f"[Playwright] Scraping {name} ...")
+    for slug in IRISHJOBS_SEARCHES:
+        url = IRISHJOBS_BASE.format(slug=slug)
+        print(f"[Playwright] Scraping IrishJobs ({slug}) ...")
         try:
-            page = page_factory()
+            page = context.new_page()
             page.goto(url, timeout=45000, wait_until="domcontentloaded")
-            parser = PARSERS.get(name)
-            if parser:
-                jobs = parser(page)
-                print(f"  {name}: {len(jobs)} jobs")
-            else:
-                print(f"  {name}: no parser, skipping")
-                jobs = []
+            jobs = _parse_irishjobs_page(page)
+            print(f"  IrishJobs ({slug}): {len(jobs)} jobs")
             all_jobs.extend(jobs)
             page.close()
         except Exception as e:
-            print(f"[Playwright] {name} failed: {e}")
-    return all_jobs
+            print(f"[Playwright] IrishJobs ({slug}) failed: {e}")
+
+    seen, unique = set(), []
+    for job in all_jobs:
+        if job["id"] not in seen:
+            seen.add(job["id"])
+            unique.append(job)
+    print(f"  IrishJobs total unique: {len(unique)} jobs")
+    return unique
+
+
+def parse_irishjobs(page) -> list[dict]:
+    return _parse_irishjobs_page(page)
