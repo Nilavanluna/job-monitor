@@ -22,12 +22,18 @@ KEYWORDS = [
 ]
 
 HARD_EXCLUDE = [
-    # Seniority
+    # Seniority — words
     "senior", "sr.", "sr ", "Sr.", "Sr ",
     "staff", "principal", "distinguished",
     "director", "manager", "head of", "vp ", "vice president",
     "lead ", " lead", "tech lead", "team lead",
     "architect", "consultant",
+    # Seniority — numbered levels
+    "engineer ii", "engineer iii", "engineer iv",
+    "engineer 2", "engineer 3", "engineer 4", "engineer 5",
+    "developer ii", "developer iii", "developer iv",
+    "developer 2", "developer 3", "developer 4",
+    " ii ", " iii ", " iv ",
     # Non-software engineering — physical/civil/mechanical
     "civil engineer", "structural engineer", "mechanical engineer",
     "electrical engineer", "chemical engineer", "process engineer",
@@ -59,4 +65,13 @@ EXCLUDE_NON_IRELAND_CITIES = [
     "new york", "san francisco", "seattle", "austin", "boston",
     "amsterdam", "berlin", "paris", "madrid", "stockholm",
     "sydney", "singapore", "warsaw", "prague", "brno",
+]
+
+# Experience level phrases that indicate senior roles — checked against job description
+EXCLUDE_EXPERIENCE_PHRASES = [
+    "5+ years", "5 or more years", "five or more years",
+    "6+ years", "7+ years", "8+ years", "10+ years",
+    "minimum 5 years", "minimum of 5 years",
+    "at least 5 years", "at least 6 years",
+    "4+ years of experience",
 ]

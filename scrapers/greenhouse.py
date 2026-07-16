@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """Greenhouse scraper — filters to Ireland only."""
 import requests
-from scrapers._keywords import KEYWORDS, HARD_EXCLUDE, IRELAND_TERMS
-
+from scrapers._keywords import KEYWORDS, HARD_EXCLUDE, IRELAND_TERMS, EXCLUDE_EXPERIENCE_PHRASES
 
 def is_entry_level(title: str) -> bool:
     t = title.lower()
@@ -10,11 +9,13 @@ def is_entry_level(title: str) -> bool:
         return False
     return any(x in t for x in KEYWORDS)
 
-
 def is_ireland(location: str) -> bool:
     loc = location.lower()
     return any(term in loc for term in IRELAND_TERMS)
 
+def is_too_senior(content: str) -> bool:
+    c = content.lower()
+    return any(phrase in c for phrase in EXCLUDE_EXPERIENCE_PHRASES)
 
 def scrape(company: dict) -> list[dict]:
     slug = company["slug"]
@@ -32,9 +33,12 @@ def scrape(company: dict) -> list[dict]:
     for job in jobs:
         title    = job.get("title", "")
         location = job.get("location", {}).get("name", "")
+        content  = job.get("content", "")
         if not is_ireland(location):
             continue
         if not is_entry_level(title):
+            continue
+        if is_too_senior(content):
             continue
         results.append({
             "id":       str(job["id"]),
