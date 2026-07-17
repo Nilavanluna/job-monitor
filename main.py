@@ -12,6 +12,7 @@ from scrapers.playwright_scraper import scrape_all as scrape_playwright
 from scrapers.linkedin_indeed import scrape_all as scrape_linkedin_indeed
 from diff_engine import load_state, save_state, find_new_jobs, update_state
 from notifier import notify_new_jobs
+from scrapers.jobspy_scraper import scrape as scrape_jobspy
 
 
 def load_companies(path="companies.yml") -> dict:
@@ -49,7 +50,12 @@ def main():
     print(f"  Playwright total: {len(playwright_jobs)} jobs")
     all_jobs.extend(playwright_jobs)
 
-    # 4. LinkedIn
+    # 4. Simplify
+    print("\n[4/5] Scraping JobSpy jobs...")
+    jobspy_jobs = scrape_jobspy()
+    all_jobs.extend(jobspy_jobs)
+
+    # 5. LinkedIn
     print("\n[4/4] Scraping LinkedIn...")
     li_jobs = scrape_linkedin_indeed()
     print(f"  LinkedIn total: {len(li_jobs)} jobs")
