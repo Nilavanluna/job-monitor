@@ -5,6 +5,7 @@ LinkedIn scraper — guest API with rate limit handling.
 import re
 import time
 import requests
+from scrapers._keywords import BLOCKED_COMPANIES
 from scrapers._keywords import KEYWORDS, HARD_EXCLUDE, IRELAND_TERMS, EXCLUDE_NON_IRELAND_CITIES
 
 HEADERS = {
@@ -110,6 +111,8 @@ def _parse_html(html: str, results: list) -> None:
         if not is_ireland(location):
             continue
 
+        if any(b in company.lower() for b in BLOCKED_COMPANIES):
+            continue
         results.append({
             "id":       job_id,
             "company":  company,

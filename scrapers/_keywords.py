@@ -75,3 +75,13 @@ EXCLUDE_EXPERIENCE_PHRASES = [
     "at least 5 years", "at least 6 years",
     "4+ years of experience",
 ]
+
+# Company blocklist — spam, staffing agencies, or unwanted posters
+BLOCKED_COMPANIES = [
+    "hire feed",
+    "hirefeed",
+    "turing",
+    "bending spoons",
+    "quik hire staffing",
+    "quik hire",
+]

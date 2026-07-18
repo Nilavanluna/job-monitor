@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from jobspy import scrape_jobs
-from scrapers._keywords import HARD_EXCLUDE
+from scrapers._keywords import HARD_EXCLUDE, BLOCKED_COMPANIES
 
 SEARCHES = [
     "software engineer Ireland",
@@ -31,6 +31,8 @@ def scrape():
                     continue
                 seen.add(key)
                 if any(x in title.lower() for x in HARD_EXCLUDE):
+                    continue
+                if any(b in company.lower() for b in BLOCKED_COMPANIES):
                     continue
                 all_jobs.append({"id": f"jobspy_{key}", "company": company, "title": title, "location": location, "url": url, "source": "jobspy"})
         except Exception as e:
