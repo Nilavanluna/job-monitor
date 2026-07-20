@@ -84,4 +84,10 @@ BLOCKED_COMPANIES = [
     "bending spoons",
     "quik hire staffing",
     "quik hire",
+    "jobtogether",
+    "hired",
+    "dataannotation",
+    "fruition group ireland",
+    "fruition group",
+    "alignerr",
 ]
